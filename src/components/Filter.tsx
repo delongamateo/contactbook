@@ -10,7 +10,7 @@ type FilterProps = {
     table: ReactTable<any>;
 }
 
-const Filter: FC<FilterProps> = ({ column, table }) => {
+const Filter: FC<FilterProps> = ({ column }) => {
     const columnFilterValue = column.getFilterValue()
 
     return (

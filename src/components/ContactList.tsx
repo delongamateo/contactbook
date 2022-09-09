@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { createColumnHelper } from "@tanstack/react-table";
 import { Table, Thead, Tbody, Tr, Th, Td, chakra, Select, Button, Text, VStack, HStack, Flex } from "@chakra-ui/react";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa"
@@ -7,44 +7,37 @@ import {
     useReactTable,
     flexRender,
     getCoreRowModel,
-    ColumnDef,
     SortingState,
     getSortedRowModel,
-    Column,
-    Table as ReactTable,
-    PaginationState,
     getFilteredRowModel,
     getPaginationRowModel,
-    OnChangeFn,
     Cell
 } from "@tanstack/react-table";
 import { useNavigate } from "react-router-dom"
 import Filter from "./Filter"
 import { useAppSelector } from "../app/hooks"
 import { selectContacts } from "../features/contactsSlice";
-import { useAppDispatch } from "../app/hooks"
-import { setContact } from "../features/contactSlice";
-import { collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore"
+import { updateDoc, doc } from "firebase/firestore"
 import { db } from "../firebase"
 import { Contact } from "../types";
+import { selectUser } from "../features/userSlice";
 
 const ContactList = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const data = useAppSelector(selectContacts)
+    const { user } = useAppSelector(selectUser);
 
     const navigate = useNavigate()
-    const dispatch = useAppDispatch();
-
 
     const changeIsFavorite = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, contact: Contact) => {
         e.stopPropagation();
-        const contactDoc = doc(db, "contacts", contact.id)
+        if (!user?.uid) return;
+        const contactDoc = doc(db, user.uid, contact.id)
         updateDoc(contactDoc, { ...contact, isFavorite: !contact.isFavorite })
     }
 
     const onRowClick = (cell: Cell<Contact, unknown>) => {
         const data = cell.getContext().row.original
-        dispatch(setContact(data))
         navigate(`/kontakt/${data.id}`)
     }
 
@@ -93,7 +86,6 @@ const ContactList = () => {
 
     useEffect(() => {
         table.setPageSize(15)
-        console.log(data)
     }, [data])
 
     return (
@@ -103,7 +95,6 @@ const ContactList = () => {
                     {table.getHeaderGroups().map((headerGroup) => (
                         <Tr key={headerGroup.id}>
                             {headerGroup.headers.map((header) => {
-                                // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
                                 const meta: any = header.column.columnDef.meta;
                                 return (
                                     <Th
@@ -143,7 +134,6 @@ const ContactList = () => {
                     {table.getRowModel().rows.map((row) => (
                         <Tr key={row.id} _hover={{ cursor: "pointer", backgroundColor: "blue.100" }}>
                             {row.getVisibleCells().map((cell) => {
-                                // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
                                 const meta: any = cell.column.columnDef.meta;
                                 return (
                                     <Td key={cell.id} isNumeric={meta?.isNumeric} onClick={() => onRowClick(cell)} >

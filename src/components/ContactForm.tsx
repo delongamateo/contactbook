@@ -1,21 +1,16 @@
-import { FC, useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
-    Formik,
-    FormikHelpers,
-    FormikProps,
-    Form,
-    Field,
-    FieldProps,
-    FieldInputProps,
-    useFormikContext,
+    Formik
 } from 'formik';
-import { Flex, FormLabel, FormControl, Input, FormErrorMessage, Button, useToast, Heading, VStack, HStack, Select } from '@chakra-ui/react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc } from "firebase/firestore"
+import { Flex, useToast, Heading, VStack } from '@chakra-ui/react';
+import { collection, addDoc, updateDoc, doc } from "firebase/firestore"
 import { db } from "../firebase"
-import { useNavigate, useLocation, useParams } from "react-router-dom"
-import { Contact, ContactTypeValue, ContactFormValues, contactType } from "../types"
+import { useLocation, useParams } from "react-router-dom"
+import { ContactTypeValue, ContactFormValues, contactType } from "../types"
 import _ from "lodash"
 import FormFields from "./FormFields"
+import { useAppSelector } from "../app/hooks"
+import { selectUser } from '../features/userSlice';
 
 const contactTypes: contactType[] = [
     {
@@ -43,8 +38,7 @@ const ContactForm = () => {
     const toast = useToast();
     const { pathname } = useLocation();
     const { id } = useParams();
-
-    const contactsRef = collection(db, "contacts")
+    const { user } = useAppSelector(selectUser);
 
     let initialValues: ContactFormValues = {
         firstName: "",
@@ -88,10 +82,11 @@ const ContactForm = () => {
     return (
         <Flex justify="center">
             <VStack w="50%" bg="blue.100" borderRadius="12px" p={4}>
-                <Heading>{pathname === "/kontakt" ? "Dodaj novi kontakt" : "Azuriraj kontakt"}</Heading>
+                <Heading>{pathname === "/kontakt" ? "Dodaj novi kontakt" : "Ažuriraj kontakt"}</Heading>
                 <Formik
                     initialValues={initialValues}
                     onSubmit={(values, actions) => {
+                        if (!user?.uid) return;
                         const valuesArray = _.values(values)
                         let filled = 0;
                         for (let i = 0; i < valuesArray.length; i++) {
@@ -102,9 +97,9 @@ const ContactForm = () => {
                             actions.setSubmitting(false);
                         } else {
                             if (id) {
-                                updateDoc(doc(db, "contacts", id), values).then(() => { actions.setSubmitting(false); showSuccessToast(false) })
+                                updateDoc(doc(db, user.uid, id), values).then(() => { actions.setSubmitting(false); showSuccessToast(false) })
                             } else {
-                                addDoc(contactsRef, values).then(() => { actions.setSubmitting(false); showSuccessToast(true); actions.resetForm(); })
+                                addDoc(collection(db, user.uid), values).then(() => { actions.setSubmitting(false); showSuccessToast(true); actions.resetForm(); })
                             }
                         }
                     }}

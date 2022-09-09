@@ -1,4 +1,4 @@
-import { FC, useEffect } from "react"
+import { FC } from "react"
 import { Navigate } from "react-router-dom";
 import { useAppSelector } from "../app/hooks"
 import { selectUser } from "../features/userSlice"
@@ -10,8 +10,8 @@ type ProtectedProps = {
 
 const Protected: FC<ProtectedProps> = ({ children }) => {
     const user = useAppSelector(selectUser)
-    useEffect(() => console.log(user), [user])
-    if (user.user === "loading") {
+
+    if (user.isLoading) {
         return (
             <Flex h="100%" align="center" justify="center">
                 <Spinner

@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { HStack, Link, Heading, Button } from '@chakra-ui/react'
 import { Link as ReactRouterLink, useLocation } from "react-router-dom"
 import { signOut, getAuth, onAuthStateChanged } from "firebase/auth"
 import { useAppDispatch } from "../app/hooks"
-import { selectUser, setActiveUser } from "../features/userSlice"
+import { selectUser, setActiveUser, setIsLoadingUser } from "../features/userSlice"
 import { useAppSelector } from "../app/hooks"
 
 const Nav = () => {
@@ -13,14 +13,24 @@ const Nav = () => {
     const dispatch = useAppDispatch()
     const user = useAppSelector(selectUser)
 
+    const linkProps = {
+        textDecoration: "none",
+        p: 2,
+        bg: "white",
+        borderRadius: "0.4em",
+        fontWeight: 600,
+    }
+
     useEffect(() => {
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                const { displayName, email, photoURL } = user
-                dispatch(setActiveUser({ displayName, email, photoURL }))
+                const { displayName, email, photoURL, uid } = user
+                dispatch(setActiveUser({ displayName, email, photoURL, uid }))
+                dispatch(setIsLoadingUser(false))
 
             } else {
                 dispatch(setActiveUser(null))
+                dispatch(setIsLoadingUser(false))
             }
         })
     }, [auth.currentUser])
@@ -30,15 +40,15 @@ const Nav = () => {
             <Heading color="white">Adresar</Heading>
             {user.user && <HStack>
                 {pathname !== "/adresar/omiljeni" &&
-                    <Link textDecoration="none" p={2} bg="white" borderRadius="0.5em" fontWeight={600} as={ReactRouterLink} to="/adresar/omiljeni" _hover={{ textDecoration: "none" }}>Omiljeni kontakti</Link>
+                    <Link {...linkProps} as={ReactRouterLink} to="/adresar/omiljeni" _hover={{ textDecoration: "none" }}>Omiljeni kontakti</Link>
                 }
                 {pathname !== "/adresar" &&
-                    <Link p={2} bg="white" borderRadius="0.5em" fontWeight={600} as={ReactRouterLink} to="/adresar" _hover={{ textDecoration: "none" }}>Lista kontakata</Link>
+                    <Link {...linkProps} as={ReactRouterLink} to="/adresar" _hover={{ textDecoration: "none" }}>Lista kontakata</Link>
                 }
                 {pathname !== "/kontakt" &&
-                    <Link textDecoration="none" p={2} bg="white" borderRadius="0.5em" fontWeight={600} as={ReactRouterLink} to="/kontakt" _hover={{ textDecoration: "none" }}>Dodaj novi kontakt</Link>
+                    <Link {...linkProps} as={ReactRouterLink} to="/kontakt" _hover={{ textDecoration: "none" }}>Dodaj novi kontakt</Link>
                 }
-                <Button variant="outline" color="white" _hover={{ color: "blue.300", backgroundColor: "white" }} onClick={() => signOut(auth)}>Log out</Button>
+                <Button variant="outline" color="white" _hover={{ color: "blue.300", backgroundColor: "white" }} onClick={() => signOut(auth)}>Odjavi se</Button>
             </HStack>}
         </HStack>
     )

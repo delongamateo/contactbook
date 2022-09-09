@@ -1,19 +1,17 @@
 import { FC, useState, useMemo, useEffect } from 'react'
 import {
-    Formik,
-    FormikHelpers,
     FormikProps,
     Form,
     Field,
-    FieldProps,
     FieldInputProps,
-    useFormikContext,
 } from 'formik';
-import { FormLabel, FormControl, Input, FormErrorMessage, Button, useToast, Heading, VStack, HStack, Select } from '@chakra-ui/react';
-import { Contact, ContactTypeValue, ContactFormValues, contactType } from "../types"
-import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, DocumentReference, DocumentData } from "firebase/firestore"
-import { useNavigate, useLocation, useParams } from "react-router-dom"
+import { FormLabel, FormControl, Input, FormErrorMessage, Button, VStack, HStack, Select } from '@chakra-ui/react';
+import { ContactTypeValue, ContactFormValues, contactType } from "../types"
+import { deleteDoc, doc, getDoc } from "firebase/firestore"
+import { useNavigate } from "react-router-dom"
 import { db } from "../firebase"
+import { useAppSelector } from '../app/hooks';
+import { selectUser } from '../features/userSlice';
 
 type FormFieldsProps = {
     props: FormikProps<ContactFormValues>;
@@ -28,11 +26,12 @@ type FormFieldsProps = {
 const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput, addInput, selectedSubFormInputs, pathname }) => {
     const [selectedType, setSelectedType] = useState<ContactTypeValue>()
     const navigate = useNavigate()
+    const { user } = useAppSelector(selectUser);
 
     const validateFirstName = (value: string) => {
         let error;
         if (value.length > 100) {
-            error = "Ime moze sadrzavati najvise 100 znakova!"
+            error = "Ime može sadržavati najviše 100 znakova!"
         }
         return error;
     }
@@ -40,14 +39,14 @@ const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput
     const validateLastName = (value: string) => {
         let error;
         if (value.length > 300) {
-            error = "Prezime moze sadrzavati najvise 300 znakova!"
+            error = "Prezime može sadržavati najviše 300 znakova!"
         }
         return error;
     }
 
     const validateContact = (value: string, type: string) => {
         const emailReg = /\S+@\S+\.\S+/;
-        const phoneNumberReg = /^[+]*[(]{0,1}[0-9]{1,3}[)]{0,1}[-\s\./0-9]*$/g;
+        const phoneNumberReg = /^[+]*[(]{0,1}[0-9]{1,3}[)]{0,1}[-\s./0-9]*$/g;
         let error;
         if (type === "email") {
             if (!emailReg.test(value)) {
@@ -73,8 +72,8 @@ const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput
     }
 
     const deleteContact = () => {
-        if (!id) return;
-        deleteDoc(doc(db, "contacts", id)).then(() => navigate("/adresar"))
+        if (!id || !user?.uid) return;
+        deleteDoc(doc(db, user.uid, id)).then(() => navigate("/adresar"))
     }
 
     const selectType = useMemo(() => (
@@ -82,7 +81,7 @@ const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput
             {subFormInputs.length > 0 && <VStack gap={0}>
                 <FormLabel alignSelf="start" mb={0}>Dodaj vrstu kontakta:</FormLabel>
                 <HStack w="100%">
-                    <Select placeholder='Select option' value={selectedType ?? ""} onChange={(e) => setSelectedType(e.target.value as ContactTypeValue)} variant="filled">
+                    <Select placeholder='Odaberi vrstu kontakta' value={selectedType ?? ""} onChange={(e) => setSelectedType(e.target.value as ContactTypeValue)} variant="filled">
                         {subFormInputs.map((type, i) => (
                             <option value={type.value} key={i}>{type.name}</option>
                         ))}
@@ -91,15 +90,17 @@ const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput
                 </HStack>
             </VStack>}
         </>
-    ), [subFormInputs, selectedType])
+    ), [subFormInputs, selectedType, addInput])
+
+    const { setValues, handleReset } = props;
 
     useEffect(() => {
-        if (!id) return;
-        getDoc(doc(db, "contacts", id))
+        if (!id || !user?.uid) return;
+        getDoc(doc(db, user.uid, id))
             .then((response) => {
                 const data = response.data()
                 if (!data) return;
-                props.setValues({
+                setValues({
                     firstName: data?.firstName ?? "",
                     lastName: data?.lastName ?? "",
                     birthDate: data?.birthDate ?? "",
@@ -117,16 +118,15 @@ const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput
                             key === "pager"
                         )) {
                         addInput(key as ContactTypeValue)
-                        console.log(value)
                     }
                 }
             })
-    }, [id])
+    }, [id, user, addInput, setValues])
 
     useEffect(() => {
         if (id) return;
-        props.handleReset()
-    }, [id])
+        handleReset()
+    }, [id, handleReset])
 
     return (
         <Form style={{ width: "100%" }}>
@@ -151,7 +151,7 @@ const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput
             <Field name="birthDate">
                 {({ field, form }: { field: FieldInputProps<string>, form: FormikProps<ContactFormValues> }) => (
                     <FormControl isInvalid={!!form.errors.birthDate && form.touched.birthDate}>
-                        <FormLabel>Datum rodenja</FormLabel>
+                        <FormLabel>Datum rođenja</FormLabel>
                         <Input {...field} type="date" required variant="filled" />
                         <FormErrorMessage>{form.errors.birthDate}</FormErrorMessage>
                     </FormControl>
@@ -180,13 +180,13 @@ const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput
                     isLoading={props.isSubmitting}
                     type='submit'
                 >
-                    {pathname === "/kontakt" ? "Dodaj" : "Azuriraj"}
+                    {pathname === "/kontakt" ? "Dodaj" : "Ažuriraj"}
                 </Button>
                 {id && <Button
                     colorScheme='red'
                     onClick={deleteContact}
                 >
-                    Izbrisi
+                    Izbriši
                 </Button>}
             </HStack>
 

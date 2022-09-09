@@ -1,11 +1,8 @@
-import { FC, useEffect, useState } from "react";
 import {
     Formik,
-    FormikHelpers,
     FormikProps,
     Form,
     Field,
-    FieldProps,
     FieldInputProps,
 } from "formik";
 import {
@@ -19,7 +16,8 @@ import {
     HStack,
     Heading,
     Flex,
-    Link
+    Link,
+    useToast
 } from "@chakra-ui/react";
 import {
     getAuth,
@@ -30,9 +28,8 @@ import {
 
 } from "firebase/auth";
 import { useAppDispatch } from "../app/hooks";
-import { setActiveUser, selectUser } from "../features/userSlice";
-import { useAppSelector } from "../app/hooks";
-import { useNavigate, useParams, useLocation, Link as ReactRouterLink, } from "react-router-dom";
+import { setActiveUser } from "../features/userSlice";
+import { useNavigate, useLocation, Link as ReactRouterLink, } from "react-router-dom";
 
 type LoginFormValues = {
     email: string;
@@ -40,7 +37,6 @@ type LoginFormValues = {
 };
 
 const Login = () => {
-    const [signUp, setIsSignUp] = useState<boolean>(true);
     const initialValues: LoginFormValues = {
         email: "",
         password: "",
@@ -48,15 +44,15 @@ const Login = () => {
 
     const auth = getAuth();
     const dispatch = useAppDispatch();
-    const user = useAppSelector(selectUser);
     const navigate = useNavigate();
     const { pathname } = useLocation();
+    const toast = useToast();
 
     const validateEmail = (value: string) => {
         const emailReg = /\S+@\S+\.\S+/;
         let error;
         if (!emailReg.test(value)) {
-            error = "Enter valid email!";
+            error = "Unesite ispravnu email adresu!";
         }
         return error;
     };
@@ -64,13 +60,13 @@ const Login = () => {
     const validatePassword = (value: string) => {
         let error;
         if (value.length < 6) {
-            error = "Password is too short!";
+            error = "Lozinka je prekratka!";
         } else if (value.search(/\d/) === -1) {
-            error = "Password must contain one number!";
+            error = "Lozinka mora sadržavati najmanje jedan broj!";
         } else if (value.search(/[a-zA-Z]/) === -1) {
-            error = "Password must contain at least one letter";
+            error = "Lozinka mora sadržavati najmanje jedno slovo";
         } else if (value.search(/[+!#$-]/) === -1) {
-            error = "Password must contain at least one of +,!,#,$,-";
+            error = "Lozinka mora sadržavati najmanje jedan od +,!,#,$,- znakova";
         }
         return error;
     };
@@ -91,15 +87,20 @@ const Login = () => {
                                     values.password
                                 )
                                     .then((user) => {
-                                        const { displayName, email, photoURL } = user.user;
-                                        dispatch(setActiveUser({ displayName, email, photoURL }));
+                                        const { displayName, email, photoURL, uid } = user.user;
+                                        dispatch(setActiveUser({ displayName, email, photoURL, uid }));
                                     })
                                     .then(() => {
                                         navigate("/");
                                         actions.setSubmitting(false);
                                     })
                                     .catch(() => {
-                                        actions.setFieldError("password", "Neispravan email ili lozinka")
+                                        toast({
+                                            title: "Neispravan email ili lozinka",
+                                            status: 'error',
+                                            duration: null,
+                                            isClosable: true,
+                                        })
                                         actions.setSubmitting(false);
                                     })
                             });
@@ -107,15 +108,20 @@ const Login = () => {
                             setPersistence(auth, browserSessionPersistence).then(() => {
                                 signInWithEmailAndPassword(auth, values.email, values.password)
                                     .then((user) => {
-                                        const { displayName, email, photoURL } = user.user;
-                                        dispatch(setActiveUser({ displayName, email, photoURL }));
+                                        const { displayName, email, photoURL, uid } = user.user;
+                                        dispatch(setActiveUser({ displayName, email, photoURL, uid }));
                                     })
                                     .then(() => {
                                         navigate("/");
                                         actions.setSubmitting(false);
                                     })
                                     .catch(() => {
-                                        actions.setFieldError("password", "Neispravan email ili lozinka")
+                                        toast({
+                                            title: "Neispravan email ili lozinka",
+                                            status: 'error',
+                                            duration: null,
+                                            isClosable: true,
+                                        })
                                         actions.setSubmitting(false);
                                     })
                             });
