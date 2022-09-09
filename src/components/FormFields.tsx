@@ -121,12 +121,12 @@ const FormFields: FC<FormFieldsProps> = ({ props, id, subFormInputs, removeInput
                     }
                 }
             })
-    }, [id, user, addInput, setValues])
+    }, [id, user])
 
     useEffect(() => {
         if (id) return;
         handleReset()
-    }, [id, handleReset])
+    }, [id])
 
     return (
         <Form style={{ width: "100%" }}>
