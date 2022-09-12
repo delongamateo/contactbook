@@ -73,7 +73,7 @@ const Login = () => {
 
     return (
         <Flex justify="center">
-            <VStack w="30%" bg="blue.100" borderRadius="12px" p={4} spacing={4}>
+            <VStack w={{ md: "80%", lg: "30%" }} bg="blue.100" borderRadius="12px" p={4} spacing={4}>
                 <Heading>{pathname === "/signIn" ? "Prijavi se" : "Izradi racun"}</Heading>
                 <Formik
                     initialValues={initialValues}

@@ -81,7 +81,7 @@ const ContactForm = () => {
 
     return (
         <Flex justify="center">
-            <VStack w="50%" bg="blue.100" borderRadius="12px" p={4}>
+            <VStack w={{ base: "90%", lg: "50%" }} bg="blue.100" borderRadius="12px" p={4}>
                 <Heading>{pathname === "/kontakt" ? "Dodaj novi kontakt" : "Ažuriraj kontakt"}</Heading>
                 <Formik
                     initialValues={initialValues}

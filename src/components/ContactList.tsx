@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
-import { createColumnHelper } from "@tanstack/react-table";
-import { Table, Thead, Tbody, Tr, Th, Td, chakra, Select, Button, Text, VStack, HStack, Flex } from "@chakra-ui/react";
+import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
+import { Table, Thead, Tbody, Tr, Th, Td, chakra, Select, Button, Text, VStack, HStack, Flex, useMediaQuery } from "@chakra-ui/react";
 import { FaArrowDown, FaArrowUp } from "react-icons/fa"
 import { AiOutlineStar, AiFillStar } from "react-icons/ai"
 import {
@@ -24,9 +24,10 @@ import { selectUser } from "../features/userSlice";
 
 const ContactList = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
+    const [columnVisibility, setColumnVisibility] = useState({})
     const data = useAppSelector(selectContacts)
     const { user } = useAppSelector(selectUser);
-
+    const [display] = useMediaQuery("(min-width: 991px)")
     const navigate = useNavigate()
 
     const changeIsFavorite = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, contact: Contact) => {
@@ -43,18 +44,20 @@ const ContactList = () => {
 
     const columnHelper = createColumnHelper<Contact>();
 
-    const columns = [
+    const columns: ColumnDef<Contact, any>[] = [
         columnHelper.accessor("firstName", {
             cell: (data) => data.getValue(),
             header: "First name"
         }),
         columnHelper.accessor("lastName", {
             cell: (data) => data.getValue(),
-            header: "Last name"
+            header: "Last name",
         }),
         columnHelper.accessor("email", {
             cell: (data) => data.getValue(),
             header: "Email",
+
+
         }),
         columnHelper.accessor("isFavorite", {
             cell: (data) => (
@@ -66,7 +69,7 @@ const ContactList = () => {
                     }
                 </Button>
             ),
-            header: "Favorite",
+            header: "",
         })
     ]
 
@@ -78,8 +81,10 @@ const ContactList = () => {
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
+        onColumnVisibilityChange: setColumnVisibility,
         state: {
-            sorting
+            sorting,
+            columnVisibility
         },
         debugTable: true,
     });
@@ -87,6 +92,10 @@ const ContactList = () => {
     useEffect(() => {
         table.setPageSize(15)
     }, [data])
+
+    useEffect(() => {
+        table.getColumn("email").toggleVisibility(display)
+    }, [display])
 
     return (
         <>
@@ -106,7 +115,7 @@ const ContactList = () => {
                                                 w="100%" justify="flex-start" align="center"
                                                 onClick={header.id === "lastName" ? header.column.getToggleSortingHandler() : undefined}
                                             >
-                                                {header.id !== "isFavorite" && flexRender(
+                                                {flexRender(
                                                     header.column.columnDef.header,
                                                     header.getContext()
                                                 )}
@@ -136,7 +145,7 @@ const ContactList = () => {
                             {row.getVisibleCells().map((cell) => {
                                 const meta: any = cell.column.columnDef.meta;
                                 return (
-                                    <Td key={cell.id} isNumeric={meta?.isNumeric} onClick={() => onRowClick(cell)} >
+                                    <Td key={cell.id} isNumeric={meta?.isNumeric} onClick={() => onRowClick(cell)}>
                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                     </Td>
                                 );
